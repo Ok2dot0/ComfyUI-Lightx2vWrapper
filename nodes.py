@@ -196,6 +196,13 @@ class LightX2VInferenceConfig:
                         "tooltip": "Use lightweight VAE to accelerate decoding",
                     },
                 ),
+                "transformer_model_name": (
+                    ["None", "480p_t2v", "480p_i2v", "720p_t2v", "720p_i2v"],
+                    {
+                        "default": "None",
+                        "tooltip": "For HunyuanVideo-1.5 models: specify which transformer variant to use (480p_t2v, 480p_i2v, 720p_t2v, 720p_i2v). Leave as 'None' for other model types.",
+                    },
+                ),
             },
         }
 
@@ -224,6 +231,7 @@ class LightX2VInferenceConfig:
         segment_length=81,
         prev_frame_length=5,
         use_tiny_vae=False,
+        transformer_model_name="None",
     ):
         """Create basic inference configuration."""
         builder = InferenceConfigBuilder()
@@ -247,6 +255,7 @@ class LightX2VInferenceConfig:
             segment_length=segment_length,
             prev_frame_length=prev_frame_length,
             use_tiny_vae=use_tiny_vae,
+            transformer_model_name=transformer_model_name if transformer_model_name != "None" else None,
         )
 
         return (config.to_dict(),)

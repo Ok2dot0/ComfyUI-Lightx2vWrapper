@@ -146,10 +146,33 @@ VAE 优化选项。
 
 ```txt
 ComfyUI/models/lightx2v/
-├── Wan2.1-I2V-14B-720P-xxx/     # 主模型检查点
-├── Wan2.1-I2V-14B-480P-xxx/     # 主模型检查点
-├── loras/          # LoRA 模型
+├── Wan2.1-I2V-14B-720P-xxx/     # Wan2.1 模型检查点
+├── Wan2.1-I2V-14B-480P-xxx/     # Wan2.1 模型检查点
+├── hunyuanvideo-1.5/            # HunyuanVideo-1.5 模型目录
+│   ├── transformer/             # 包含 transformer 变体
+│   │   ├── 480p_t2v/           # 480p 文本生成视频变体
+│   │   ├── 480p_i2v/           # 480p 图片生成视频变体
+│   │   ├── 720p_t2v/           # 720p 文本生成视频变体
+│   │   └── 720p_i2v/           # 720p 图片生成视频变体
+│   ├── text_encoder/           # 文本编码器模型
+│   └── vae/                    # VAE 模型
+├── loras/                       # LoRA 模型
 ```
+
+### HunyuanVideo-1.5 模型设置
+
+对于 HunyuanVideo-1.5 模型（hy15），您需要：
+
+1. 将模型文件夹放在 `ComfyUI/models/lightx2v/` 中（例如 `hunyuanvideo-1.5/`）
+2. 文件夹必须包含带有模型变体的 `transformer/` 子目录
+3. 在 LightX2V Inference Config 节点中：
+   - 将 **model_cls** 设置为 `hunyuan_video_1.5`
+   - 在 **model_name** 中选择您的模型文件夹名称（例如 `hunyuanvideo-1.5`）
+   - 设置 **transformer_model_name** 以指定要使用的变体：
+     - `480p_t2v` 用于 480p 文本生成视频
+     - `480p_i2v` 用于 480p 图片生成视频
+     - `720p_t2v` 用于 720p 文本生成视频
+     - `720p_i2v` 用于 720p 图片生成视频
 
 ## 使用技巧
 
