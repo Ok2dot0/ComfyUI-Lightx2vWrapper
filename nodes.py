@@ -203,6 +203,27 @@ class LightX2VInferenceConfig:
                         "tooltip": "For HunyuanVideo-1.5 models: specify which transformer variant to use (480p_t2v, 480p_i2v, 720p_t2v, 720p_i2v). Leave as 'None' for other model types.",
                     },
                 ),
+                "use_quantized_checkpoint": (
+                    "BOOLEAN",
+                    {
+                        "default": False,
+                        "tooltip": "Enable loading of pre-quantized checkpoint files (.safetensors)",
+                    },
+                ),
+                "dit_quantized_ckpt": (
+                    "STRING",
+                    {
+                        "default": "",
+                        "tooltip": "Path to quantized transformer checkpoint (e.g., hy15_720p_i2v_fp8_e4m3_lightx2v.safetensors). Leave empty to auto-detect.",
+                    },
+                ),
+                "text_encoder_quantized_ckpt": (
+                    "STRING",
+                    {
+                        "default": "",
+                        "tooltip": "Path to quantized text encoder checkpoint. Leave empty to use default.",
+                    },
+                ),
             },
         }
 
@@ -232,6 +253,9 @@ class LightX2VInferenceConfig:
         prev_frame_length=5,
         use_tiny_vae=False,
         transformer_model_name="None",
+        use_quantized_checkpoint=False,
+        dit_quantized_ckpt="",
+        text_encoder_quantized_ckpt="",
     ):
         """Create basic inference configuration."""
         builder = InferenceConfigBuilder()
@@ -256,6 +280,9 @@ class LightX2VInferenceConfig:
             prev_frame_length=prev_frame_length,
             use_tiny_vae=use_tiny_vae,
             transformer_model_name=transformer_model_name if transformer_model_name != "None" else None,
+            use_quantized_checkpoint=use_quantized_checkpoint,
+            dit_quantized_ckpt=dit_quantized_ckpt if dit_quantized_ckpt else None,
+            text_encoder_quantized_ckpt=text_encoder_quantized_ckpt if text_encoder_quantized_ckpt else None,
         )
 
         return (config.to_dict(),)
@@ -993,6 +1020,7 @@ class LightX2VConfigCombinerV2:
                 ),
                 "lora_chain": ("LORA_CHAIN", {"tooltip": "LoRA chain configuration"}),
                 "talk_objects_config": ("TALK_OBJECTS_CONFIG", {"tooltip": "Talk objects configuration"}),
+                "sr_config": ("SR_CONFIG", {"tooltip": "Super resolution configuration"}),
                 "image": ("IMAGE", {"tooltip": "Input image for i2v or s2v task"}),
                 "audio": (
                     "AUDIO",
@@ -1016,6 +1044,7 @@ class LightX2VConfigCombinerV2:
         memory_config=None,
         lora_chain=None,
         talk_objects_config=None,
+        sr_config=None,
         image=None,
         audio=None,
     ):
@@ -1028,6 +1057,9 @@ class LightX2VConfigCombinerV2:
             QuantizationConfig(**quantization_config) if quantization_config and isinstance(quantization_config, dict) else quantization_config
         )
         mem_config = MemoryOptimizationConfig(**memory_config) if memory_config and isinstance(memory_config, dict) else memory_config
+        from .data_models import SRConfig
+
+        sr_cfg = SRConfig(**sr_config) if sr_config and isinstance(sr_config, dict) else sr_config
 
         # Build combined config
         config = self.config_builder.combine_configs(
@@ -1037,6 +1069,7 @@ class LightX2VConfigCombinerV2:
             memory_config=mem_config,
             lora_chain=lora_chain,
             talk_objects_config=talk_objects_config,
+            sr_config=sr_cfg,
         )
 
         # Add prompts to config
@@ -1244,6 +1277,78 @@ class LightX2VModularInferenceV2:
             pass
 
 
+class LightX2VSuperResolution:
+    """Super Resolution configuration node."""
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "sr_model_path": (
+                    "STRING",
+                    {
+                        "default": "",
+                        "tooltip": "Path to super resolution model (e.g., hy15_1080p_sr_cfg_distiled_fp8_e4m3_lightx2v.safetensors)",
+                    },
+                ),
+                "sr_version": (
+                    ["1080p", "2k", "4k"],
+                    {
+                        "default": "1080p",
+                        "tooltip": "Target super resolution version",
+                    },
+                ),
+                "flow_shift": (
+                    "FLOAT",
+                    {
+                        "default": 7.0,
+                        "min": 0.0,
+                        "max": 20.0,
+                        "step": 0.1,
+                        "tooltip": "Flow shift parameter for SR model",
+                    },
+                ),
+                "guidance_scale": (
+                    "FLOAT",
+                    {
+                        "default": 1.0,
+                        "min": 0.0,
+                        "max": 10.0,
+                        "step": 0.1,
+                        "tooltip": "Guidance scale for SR generation",
+                    },
+                ),
+                "num_inference_steps": (
+                    "INT",
+                    {
+                        "default": 4,
+                        "min": 1,
+                        "max": 100,
+                        "tooltip": "Number of inference steps for SR",
+                    },
+                ),
+            },
+        }
+
+    RETURN_TYPES = ("SR_CONFIG",)
+    RETURN_NAMES = ("sr_config",)
+    FUNCTION = "create_config"
+    CATEGORY = "LightX2V/Config"
+
+    def create_config(self, sr_model_path, sr_version, flow_shift, guidance_scale, num_inference_steps):
+        """Create super resolution configuration."""
+        from .data_models import SRConfig
+
+        config = SRConfig(
+            sr_model_path=sr_model_path,
+            sr_version=sr_version,
+            flow_shift=flow_shift,
+            guidance_scale=guidance_scale,
+            num_inference_steps=num_inference_steps,
+        )
+        return (config.to_dict(),)
+
+
 NODE_CLASS_MAPPINGS = {
     "LightX2VInferenceConfig": LightX2VInferenceConfig,
     "LightX2VTeaCache": LightX2VTeaCache,
@@ -1254,6 +1359,7 @@ NODE_CLASS_MAPPINGS = {
     "LightX2VModularInference": LightX2VModularInference,
     "LightX2VConfigCombinerV2": LightX2VConfigCombinerV2,
     "LightX2VModularInferenceV2": LightX2VModularInferenceV2,
+    "LightX2VSuperResolution": LightX2VSuperResolution,
     "LightX2VTalkObjectInput": TalkObjectInput,
     "LightX2VTalkObjectsCombiner": TalkObjectsCombiner,
     "LightX2VTalkObjectsFromJSON": TalkObjectsFromJSON,
@@ -1270,6 +1376,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "LightX2VModularInference": "LightX2V Modular Inference",
     "LightX2VConfigCombinerV2": "LightX2V Config Combiner V2",
     "LightX2VModularInferenceV2": "LightX2V Modular Inference V2",
+    "LightX2VSuperResolution": "LightX2V Super Resolution",
     "LightX2VTalkObjectInput": "LightX2V Talk Object Input (Single)",
     "LightX2VTalkObjectsCombiner": "LightX2V Talk Objects Combiner",
     "LightX2VTalkObjectsFromFiles": "LightX2V Talk Objects From Files",

@@ -16,6 +16,7 @@ from .data_models import (
     LoRAConfig,
     MemoryOptimizationConfig,
     QuantizationConfig,
+    SRConfig,
     TalkObject,
     TalkObjectsConfig,
     TeaCacheConfig,
@@ -154,6 +155,9 @@ class InferenceConfigBuilder:
             "prev_frame_length",
             "use_tiny_vae",
             "transformer_model_name",
+            "use_quantized_checkpoint",
+            "dit_quantized_ckpt",
+            "text_encoder_quantized_ckpt",
         ]:
             if param in optional_params:
                 setattr(config, param, optional_params[param])
@@ -284,6 +288,7 @@ class ConfigBuilder:
         memory_config: Optional[MemoryOptimizationConfig] = None,
         lora_chain: Optional[List[Dict[str, Any]]] = None,
         talk_objects_config: Optional[TalkObjectsConfig] = None,
+        sr_config: Optional[SRConfig] = None,
     ) -> EasyDict:
         # Create combined configuration
         combined = CombinedConfig(
@@ -292,6 +297,7 @@ class ConfigBuilder:
             quantization=quantization_config,
             memory=memory_config,
             talk_objects=talk_objects_config,
+            sr=sr_config,
         )
 
         # Process LoRA configs if provided

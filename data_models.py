@@ -61,6 +61,11 @@ class InferenceConfig:
     use_tiny_vae: bool = False
     transformer_model_name: Optional[str] = None  # For HunyuanVideo-1.5 models
 
+    # Quantized checkpoint support
+    use_quantized_checkpoint: bool = False
+    dit_quantized_ckpt: Optional[str] = None
+    text_encoder_quantized_ckpt: Optional[str] = None
+
     # Runtime parameters
     prompt: str = ""
     negative_prompt: str = ""
@@ -159,6 +164,26 @@ class TalkObjectsConfig:
 
 
 @dataclass
+class SRConfig:
+    """Super Resolution configuration."""
+
+    sr_model_path: str
+    sr_version: str = "1080p"
+    flow_shift: float = 7.0
+    guidance_scale: float = 1.0
+    num_inference_steps: int = 4
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "sr_model_path": self.sr_model_path,
+            "sr_version": self.sr_version,
+            "flow_shift": self.flow_shift,
+            "guidance_scale": self.guidance_scale,
+            "num_inference_steps": self.num_inference_steps,
+        }
+
+
+@dataclass
 class CombinedConfig:
     """Combined configuration for all modules."""
 
@@ -168,6 +193,7 @@ class CombinedConfig:
     memory: Optional[MemoryOptimizationConfig] = None
     lora_configs: List[LoRAConfig] = field(default_factory=list)
     talk_objects: Optional[TalkObjectsConfig] = None
+    sr: Optional[SRConfig] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for pipeline."""
@@ -190,5 +216,8 @@ class CombinedConfig:
 
         if self.talk_objects:
             result["talk_objects"] = self.talk_objects.to_list()
+
+        if self.sr:
+            result["sr"] = self.sr.to_dict()
 
         return result
