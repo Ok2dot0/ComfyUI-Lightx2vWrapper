@@ -316,6 +316,7 @@ class ModularConfigManager:
             "use_31_block": "use_31_block",
             "prev_frame_length": "prev_frame_length",
             "fixed_area": "fixed_area",
+            "transformer_model_name": "transformer_model_name",
         }
 
         self._update_from_config(updates, config, basic_mappings)
