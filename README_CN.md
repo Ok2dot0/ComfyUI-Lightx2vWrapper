@@ -13,8 +13,10 @@ LightX2V 的 ComfyUI 自定义节点封装，通过模块化配置实现视频�
 - **高级优化功能**：
   - TeaCache 加速（最高可达 3 倍速度提升）
   - 量化支持（int8、fp8）
+  - 预量化检查点加载（.safetensors）
   - 内存优化与 CPU 卸载
   - 轻量级 VAE 选项
+- **超分辨率**：将视频输出升级至 1080p、2k 或 4k
 - **LoRA 支持**：可串联多个 LoRA 模型进行自定义
 - **多模型支持**：wan2.1、wan2.2、hunyuan_video_1.5 架构
 
@@ -94,23 +96,33 @@ VAE 优化选项。
 - **输入**：lora_name（LoRA 名称）、strength（强度 0.0-2.0）、lora_chain（LoRA 链，可选）
 - **输出**：LoRA 链配置
 
+#### 7. LightX2V Super Resolution（超分辨率）
+
+视频输出的超分辨率配置。
+
+- **输入**：sr_model_path（SR 模型路径）、sr_version（1080p/2k/4k）、flow_shift（流位移）、guidance_scale（引导比例）、num_inference_steps（推理步数）
+- **输出**：SR 配置
+- **注意**：需要超分辨率模型检查点
+
 ### 组合节点
 
-#### 7. LightX2V Config Combiner（配置组合器）
+#### 8. LightX2V Config Combiner / Config Combiner V2（配置组合器）
 
 将所有配置模块组合成单一配置。
 
-- **输入**：所有配置类型（可选）
-- **输出**：组合后的配置对象
+- **输入**：所有配置类型（可选），包括 SR 配置
+- **输出**：组合后的配置对象（V1）或准备好的配置（V2）
+- **注意**：V2 版本还处理图像/音频/提示词的准备工作
 
 ### 推理节点
 
-#### 8. LightX2V Modular Inference（模块化推理）
+#### 9. LightX2V Modular Inference / Modular Inference V2（模块化推理）
 
 视频生成的主推理节点。
 
-- **输入**：combined_config（组合配置）、prompt（提示词）、negative_prompt（负面提示词）、image（图像，可选）、audio（音频，可选）
-- **输出**：生成的视频帧
+- **输入**：combined_config（V1）或 prepared_config（V2）、prompt（提示词）、negative_prompt（负面提示词）、image（图像，可选）、audio（音频，可选）
+- **输出**：生成的视频帧和音频
+- **注意**：V2 版本接受来自 Config Combiner V2 的 prepared_config
 
 ## 使用示例
 
@@ -155,7 +167,12 @@ ComfyUI/models/lightx2v/
 │   │   ├── 720p_t2v/           # 720p 文本生成视频变体
 │   │   └── 720p_i2v/           # 720p 图片生成视频变体
 │   ├── text_encoder/           # 文本编码器模型
-│   └── vae/                    # VAE 模型
+│   ├── vae/                    # VAE 模型
+│   ├── quantized/              # 预量化检查点文件（可选）
+│   │   ├── hy15_720p_i2v_fp8_e4m3_lightx2v.safetensors
+│   │   └── hy15_720p_i2v_cfg_distilled_fp8_e4m3_lightx2v.safetensors
+│   └── sr/                     # 超分辨率模型（可选）
+│       └── hy15_1080p_sr_cfg_distiled_fp8_e4m3_lightx2v.safetensors
 ├── loras/                       # LoRA 模型
 ```
 
@@ -173,6 +190,35 @@ ComfyUI/models/lightx2v/
      - `480p_i2v` 用于 480p 图片生成视频
      - `720p_t2v` 用于 720p 文本生成视频
      - `720p_i2v` 用于 720p 图片生成视频
+
+### 使用预量化检查点
+
+对于 HunyuanVideo-1.5 模型，您可以使用预量化检查点文件以加快加载速度并减少内存使用：
+
+1. 将您的量化检查点文件（`.safetensors`）放在 `ComfyUI/models/lightx2v/hunyuanvideo-1.5/quantized/` 中
+2. 在 LightX2V Inference Config 节点中：
+   - 启用 **use_quantized_checkpoint**
+   - 设置 **dit_quantized_ckpt** 为您的检查点路径（例如 `ComfyUI/models/lightx2v/hunyuanvideo-1.5/quantized/hy15_720p_i2v_fp8_e4m3_lightx2v.safetensors`）
+   - 可选设置 **text_encoder_quantized_ckpt** 用于文本编码器检查点
+   - 留空字段以根据模型配置自动检测
+
+**注意**：预量化检查点已经量化过，因此不需要单独启用量化。
+
+### 使用超分辨率
+
+要升级生成的视频分辨率：
+
+1. 将您的 SR 模型检查点放在 `ComfyUI/models/lightx2v/hunyuanvideo-1.5/sr/` 中
+2. 在工作流中添加 **LightX2V Super Resolution** 节点
+3. 设置 **sr_model_path** 为您的 SR 模型（例如 `ComfyUI/models/lightx2v/hunyuanvideo-1.5/sr/hy15_1080p_sr_cfg_distiled_fp8_e4m3_lightx2v.safetensors`）
+4. 选择目标分辨率：`1080p`、`2k` 或 `4k`
+5. 将 SR 配置输出连接到 **Config Combiner V2**
+6. 正常运行推理 - 输出将被升级
+
+**SR 参数：**
+- **flow_shift**：控制去噪流程（默认值：7.0）
+- **guidance_scale**：SR 的引导强度（默认值：1.0）
+- **num_inference_steps**：SR 的推理步数（默认值：4）
 
 ## 使用技巧
 
