@@ -16,7 +16,7 @@ LightX2V 的 ComfyUI 自定义节点封装，通过模块化配置实现视频�
   - 内存优化与 CPU 卸载
   - 轻量级 VAE 选项
 - **LoRA 支持**：可串联多个 LoRA 模型进行自定义
-- **多模型支持**：wan2.1、hunyuan 架构
+- **多模型支持**：wan2.1、wan2.2、hunyuan_video_1.5 架构
 
 ## 安装说明
 

@@ -16,7 +16,7 @@ A ComfyUI custom node wrapper for LightX2V, enabling modular video generation wi
   - Memory optimization with CPU offloading
   - Lightweight VAE options
 - **LoRA Support**: Chain multiple LoRA models for customization
-- **Multiple Model Support**: wan2.1, hunyuan architectures
+- **Multiple Model Support**: wan2.1, wan2.2, hunyuan_video_1.5 architectures
 
 ## Installation
 
