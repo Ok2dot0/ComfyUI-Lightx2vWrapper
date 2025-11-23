@@ -317,6 +317,9 @@ class ModularConfigManager:
             "prev_frame_length": "prev_frame_length",
             "fixed_area": "fixed_area",
             "transformer_model_name": "transformer_model_name",
+            "use_quantized_checkpoint": "use_quantized_checkpoint",
+            "dit_quantized_ckpt": "dit_quantized_ckpt",
+            "text_encoder_quantized_ckpt": "text_encoder_quantized_ckpt",
         }
 
         self._update_from_config(updates, config, basic_mappings)
@@ -481,6 +484,11 @@ class ModularConfigManager:
             talk_objects_dict = combined_config.talk_objects.to_dict()
             final_config.update(talk_objects_dict)
 
+        # Handle SR configuration
+        if combined_config.sr:
+            sr_dict = combined_config.sr.to_dict()
+            final_config.update(sr_dict)
+
         # Load model-specific configuration
         model_config = self._load_model_config(final_config.get("model_path", ""))
         for key, value in model_config.items():
@@ -501,6 +509,7 @@ class ModularConfigManager:
             LoRAConfig,
             MemoryOptimizationConfig,
             QuantizationConfig,
+            SRConfig,
             TalkObject,
             TalkObjectsConfig,
             TeaCacheConfig,
@@ -538,6 +547,10 @@ class ModularConfigManager:
                 talk_obj = TalkObject(**obj_dict)
                 talk_objects.add_object(talk_obj)
             combined.talk_objects = talk_objects
+
+        # Process SR config
+        if "sr" in configs:
+            combined.sr = SRConfig(**configs["sr"])
 
         # Use the new method to build final config
         return self.build_final_config_from_combined(combined)
