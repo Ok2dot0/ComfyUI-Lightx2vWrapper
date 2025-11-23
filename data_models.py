@@ -59,6 +59,7 @@ class InferenceConfig:
     segment_length: int = 81
     prev_frame_length: int = 5
     use_tiny_vae: bool = False
+    transformer_model_name: Optional[str] = None  # For HunyuanVideo-1.5 models
 
     # Runtime parameters
     prompt: str = ""

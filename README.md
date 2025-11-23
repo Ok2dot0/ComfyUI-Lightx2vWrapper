@@ -146,10 +146,33 @@ Models should be placed in:
 
 ```txt
 ComfyUI/models/lightx2v/
-├── Wan2.1-I2V-14B-720P-xxx/     # Main model checkpoints
-├── Wan2.1-I2V-14B-480P-xxx/     # Main model checkpoints
-├── loras/          # LoRA models
+├── Wan2.1-I2V-14B-720P-xxx/     # Wan2.1 model checkpoints
+├── Wan2.1-I2V-14B-480P-xxx/     # Wan2.1 model checkpoints
+├── hunyuanvideo-1.5/            # HunyuanVideo-1.5 model directory
+│   ├── transformer/             # Contains transformer variants
+│   │   ├── 480p_t2v/           # 480p text-to-video variant
+│   │   ├── 480p_i2v/           # 480p image-to-video variant
+│   │   ├── 720p_t2v/           # 720p text-to-video variant
+│   │   └── 720p_i2v/           # 720p image-to-video variant
+│   ├── text_encoder/           # Text encoder models
+│   └── vae/                    # VAE models
+├── loras/                       # LoRA models
 ```
+
+### HunyuanVideo-1.5 Model Setup
+
+For HunyuanVideo-1.5 models (hy15), you need to:
+
+1. Place the model folder in `ComfyUI/models/lightx2v/` (e.g., `hunyuanvideo-1.5/`)
+2. The folder must contain a `transformer/` subdirectory with model variants
+3. In the LightX2V Inference Config node:
+   - Set **model_cls** to `hunyuan_video_1.5`
+   - Select your model folder name in **model_name** (e.g., `hunyuanvideo-1.5`)
+   - Set **transformer_model_name** to specify which variant to use:
+     - `480p_t2v` for 480p text-to-video
+     - `480p_i2v` for 480p image-to-video
+     - `720p_t2v` for 720p text-to-video
+     - `720p_i2v` for 720p image-to-video
 
 ## Tips
 
